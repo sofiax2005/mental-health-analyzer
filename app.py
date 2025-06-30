@@ -6,40 +6,42 @@ import matplotlib.pyplot as plt
 import altair as alt
 from datetime import datetime
 
-# Load model
+# ---------------------- Firebase Auth ----------------------
+
+firebase_config = {
+    "apiKey": "AIzaSyDkM5LMKrPboIXpxNN6XQz6jMV1Nodu1FY",
+    "authDomain": "analyser-944e8.firebaseapp.com",
+    "projectId": "analyser-944e8",
+    "storageBucket": "analyser-944e8.appspot.com",
+    "messagingSenderId": "595759773869",
+    "appId": "1:595759773869:web:cf837ee1bc2383669fae24",
+    "measurementId": "G-QYR7Q9L35B",
+    "databaseURL": ""
+}
+
+firebase = pyrebase.initialize_app(firebase_config)
+auth = firebase.auth()
+
+# ---------------------- Model Loading ----------------------
+
 @st.cache_resource
 def load_model():
     return pipeline("text-classification", model="nateraw/bert-base-uncased-emotion")
 
 emotion_classifier = load_model()
 
-# 🔐 Firebase Config & Auth
-firebase_config = {
-      apiKey: "AIzaSyDkM5LMKrPboIXpxNN6XQz6jMV1Nodu1FY",
-  authDomain: "analyser-944e8.firebaseapp.com",
-  projectId: "analyser-944e8",
-  storageBucket: "analyser-944e8.firebasestorage.app",
-  messagingSenderId: "595759773869",
-  appId: "1:595759773869:web:cf837ee1bc2383669fae24",
-  measurementId: "G-QYR7Q9L35B"
-}
+# ---------------------- Auth UI ----------------------
 
-firebase = pyrebase.initialize_app(firebase_config)
-auth = firebase.auth()
-
-# Sidebar login/signup
 st.sidebar.title("🔐 Login")
 choice = st.sidebar.selectbox("Login or Signup", ["Login", "Signup"])
 email = st.sidebar.text_input("Email")
 password = st.sidebar.text_input("Password", type="password")
 
-login_successful = False
-
 if choice == "Signup":
     if st.sidebar.button("Create Account"):
         try:
             auth.create_user_with_email_and_password(email, password)
-            st.sidebar.success("Account created!")
+            st.sidebar.success("Account created! Please log in.")
         except Exception as e:
             st.sidebar.error(f"Signup failed: {e}")
 
@@ -48,16 +50,13 @@ if choice == "Login":
         try:
             user = auth.sign_in_with_email_and_password(email, password)
             st.session_state["user"] = user
-            login_successful = True
             st.sidebar.success("Logged in!")
         except Exception as e:
             st.sidebar.error(f"Login failed: {e}")
 
-# 🛑 Don't show app unless logged in
 if "user" not in st.session_state:
     st.warning("Please log in to use the app.")
     st.stop()
-
 
 # ---------------------- Mood-to-Quote & Playlist Mapping ----------------------
 
@@ -94,14 +93,6 @@ def get_spotify_embed(mood):
     }
     return playlists.get(mood.lower())
 
-# ---------------------- Load Emotion Classification Model ----------------------
-
-@st.cache_resource
-def load_model():
-    return pipeline("text-classification", model="nateraw/bert-base-uncased-emotion")
-
-emotion_classifier = load_model()
-
 # ---------------------- Streamlit UI ----------------------
 
 st.title("🧠 Mental Health Sentiment Analyzer")
@@ -118,21 +109,21 @@ if st.button("Analyze Mood"):
 
         st.success(f"**Detected Mood**: {mood} ({score:.2f} confidence)")
 
-        # Show mood quote
         quote = get_quote(mood)
         st.markdown(f"💬 *{quote}*")
 
-        # Show Spotify recommendation
         spotify_url = get_spotify_embed(mood)
         if spotify_url:
             st.markdown("**🎧 Recommended Vibes:**")
             st.components.v1.iframe(spotify_url, height=80)
 
-        # Emoji burst
         emoji = get_emoji(mood)
         st.markdown(f"<h1 style='text-align: center; font-size: 72px;'>{emoji}</h1>", unsafe_allow_html=True)
 
-        # Save mood entry
+        # Save entry per user
+        uid = st.session_state["user"]["localId"]
+        log_file = f"mood_{uid}.csv"
+
         data = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "text": entry,
@@ -141,18 +132,20 @@ if st.button("Analyze Mood"):
         }
 
         try:
-            df = pd.read_csv("mood_log.csv")
+            df = pd.read_csv(log_file)
         except FileNotFoundError:
             df = pd.DataFrame()
 
         df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
-        df.to_csv("mood_log.csv", index=False)
+        df.to_csv(log_file, index=False)
 
 # ---------------------- Mood History ----------------------
 
 if st.checkbox("📈 Show Mood History"):
     try:
-        df = pd.read_csv("mood_log.csv")
+        uid = st.session_state["user"]["localId"]
+        log_file = f"mood_{uid}.csv"
+        df = pd.read_csv(log_file)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df['mood'] = df['mood'].astype(str).str.capitalize()
 
