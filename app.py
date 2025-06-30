@@ -83,7 +83,7 @@ def get_emoji(mood):
 
 def get_spotify_embed(mood):
     playlists = {
-        "joy": "https://open.spotify.com/embed/playlist/5v7CLKGWzVbkWO8FyuG12C?si=CnJO2eLLRBuShrfIEKBngg",
+        "joy": "https://open.spotify.com/embed/playlist/7GCeanb0LGc6KOnvMvpIFK?si=CL2IoAANTYyC47XRa69A9w",
         "sadness": "https://open.spotify.com/embed/playlist/37i9dQZF1DWVV27DiNWxkR",
         "anger": "https://open.spotify.com/embed/playlist/37i9dQZF1DWX83CujKHHOn",
         "fear": "https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd",
