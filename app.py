@@ -2,6 +2,7 @@ import streamlit as st
 from transformers import pipeline
 import pandas as pd
 import matplotlib.pyplot as plt
+import altair as alt
 from datetime import datetime
 
 # ---------------------- Mood-to-Quote & Playlist Mapping ----------------------
@@ -99,7 +100,14 @@ if st.checkbox("📈 Show Mood History"):
     try:
         df = pd.read_csv("mood_log.csv")
         st.dataframe(df.tail(10))
-        mood_counts = df['mood'].value_counts()
-        st.bar_chart(mood_counts)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        chart = alt.Chart(df).mark_line(point=True).encode(
+        x=alt.X('timestamp:T', title='Time'),
+        y=alt.Y('mood:N', title='Detected Mood'),
+        color='mood:N',
+        tooltip=['timestamp', 'mood', 'text']).properties(title='Mood Over Time', width=700,height=400).interactive()
+
+st.altair_chart(chart, use_container_width=True)
+
     except:
         st.error("No mood history yet. Go vent some feelings first.")
