@@ -87,6 +87,10 @@ if st.button("Analyze Mood"):
 
         df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
         df.to_csv("mood_log.csv", index=False)
+        
+emoji = get_emoji(mood)
+st.markdown(f"<h1 style='text-align: center; font-size: 72px;'>{emoji}</h1>", unsafe_allow_html=True)
+
 
 # ---------------------- Mood History ----------------------
 
