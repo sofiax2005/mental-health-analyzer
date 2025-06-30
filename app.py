@@ -99,15 +99,24 @@ if st.button("Analyze Mood"):
 if st.checkbox("📈 Show Mood History"):
     try:
         df = pd.read_csv("mood_log.csv")
-        st.dataframe(df.tail(10))
         df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['mood'] = df['mood'].astype(str).str.capitalize()
+
+        st.dataframe(df.tail(10))
+
         chart = alt.Chart(df).mark_line(point=True).encode(
-        x=alt.X('timestamp:T', title='Time'),
-        y=alt.Y('mood:N', title='Detected Mood'),
-        color='mood:N',
-        tooltip=['timestamp', 'mood', 'text']).properties(title='Mood Over Time', width=700,height=400).interactive()
+            x=alt.X('timestamp:T', title='Time'),
+            y=alt.Y('mood:N', title='Detected Mood'),
+            color='mood:N',
+            tooltip=['timestamp', 'mood', 'text']
+        ).properties(
+            title='Mood Over Time',
+            width=700,
+            height=400
+        ).interactive()
 
-st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, use_container_width=True)
 
-    except:
+    except Exception as e:
         st.error("No mood history yet. Go vent some feelings first.")
+        st.caption(f"Debug info: {e}")
