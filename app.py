@@ -16,6 +16,16 @@ def get_quote(mood):
         "surprise": "Life is full of surprises. Embrace the unexpected.",
     }
     return quotes.get(mood.lower(), "Emotions are valid. Keep going.")
+def get_emoji(mood):
+    mood_emojis = {
+        "joy": "😄🎉✨",
+        "sadness": "😢💧🫂",
+        "anger": "😠🔥💥",
+        "fear": "😨🫣👻",
+        "love": "❤️🥰💖",
+        "surprise": "😲🎁🤯"
+    }
+    return mood_emojis.get(mood.lower(), "🙂")
 
 def get_spotify_embed(mood):
     playlists = {
@@ -77,8 +87,6 @@ if st.button("Analyze Mood"):
 
         df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
         df.to_csv("mood_log.csv", index=False)
-
-        st.balloons()
 
 # ---------------------- Mood History ----------------------
 
