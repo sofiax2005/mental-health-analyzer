@@ -33,8 +33,7 @@ spotify_url = get_spotify_embed(mood)
 if spotify_url:
     st.markdown("**🎧 Recommended Vibes:**", unsafe_allow_html=True)
     st.components.v1.iframe(spotify_url, height=80)
-
-        data = {
+ data = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "text": entry,
             "mood": mood,
