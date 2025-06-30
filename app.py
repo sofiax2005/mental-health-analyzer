@@ -38,15 +38,15 @@ data = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "mood": mood,
         "confidence": score}
 
-        try:
-            df = pd.read_csv("mood_log.csv")
-        except FileNotFoundError:
-            df = pd.DataFrame()
+try:
+    df = pd.read_csv("mood_log.csv")
+except FileNotFoundError:
+    df = pd.DataFrame()
 
-        df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
-        df.to_csv("mood_log.csv", index=False)
+df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
+df.to_csv("mood_log.csv", index=False)
 
-        st.balloons()
+st.balloons()
 
 if st.checkbox("📈 Show Mood History"):
     try:
