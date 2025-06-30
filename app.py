@@ -1,9 +1,63 @@
 import streamlit as st
+import pyrebase
 from transformers import pipeline
 import pandas as pd
 import matplotlib.pyplot as plt
 import altair as alt
 from datetime import datetime
+
+# Load model
+@st.cache_resource
+def load_model():
+    return pipeline("text-classification", model="nateraw/bert-base-uncased-emotion")
+
+emotion_classifier = load_model()
+
+# 🔐 Firebase Config & Auth
+firebase_config = {
+      apiKey: "AIzaSyDkM5LMKrPboIXpxNN6XQz6jMV1Nodu1FY",
+  authDomain: "analyser-944e8.firebaseapp.com",
+  projectId: "analyser-944e8",
+  storageBucket: "analyser-944e8.firebasestorage.app",
+  messagingSenderId: "595759773869",
+  appId: "1:595759773869:web:cf837ee1bc2383669fae24",
+  measurementId: "G-QYR7Q9L35B"
+}
+
+firebase = pyrebase.initialize_app(firebase_config)
+auth = firebase.auth()
+
+# Sidebar login/signup
+st.sidebar.title("🔐 Login")
+choice = st.sidebar.selectbox("Login or Signup", ["Login", "Signup"])
+email = st.sidebar.text_input("Email")
+password = st.sidebar.text_input("Password", type="password")
+
+login_successful = False
+
+if choice == "Signup":
+    if st.sidebar.button("Create Account"):
+        try:
+            auth.create_user_with_email_and_password(email, password)
+            st.sidebar.success("Account created!")
+        except Exception as e:
+            st.sidebar.error(f"Signup failed: {e}")
+
+if choice == "Login":
+    if st.sidebar.button("Login"):
+        try:
+            user = auth.sign_in_with_email_and_password(email, password)
+            st.session_state["user"] = user
+            login_successful = True
+            st.sidebar.success("Logged in!")
+        except Exception as e:
+            st.sidebar.error(f"Login failed: {e}")
+
+# 🛑 Don't show app unless logged in
+if "user" not in st.session_state:
+    st.warning("Please log in to use the app.")
+    st.stop()
+
 
 # ---------------------- Mood-to-Quote & Playlist Mapping ----------------------
 
