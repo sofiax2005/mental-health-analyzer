@@ -24,6 +24,16 @@ if st.button("Analyze Mood"):
 
         st.success(f"**Detected Mood**: {mood} ({score:.2f} confidence)")
 
+# Show quote
+quote = get_quote(mood)
+st.markdown(f"💬 *{quote}*")
+
+# Show Spotify player
+spotify_url = get_spotify_embed(mood)
+if spotify_url:
+    st.markdown("**🎧 Recommended Vibes:**", unsafe_allow_html=True)
+    st.components.v1.iframe(spotify_url, height=80)
+
         data = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "text": entry,
@@ -49,4 +59,27 @@ if st.checkbox("📈 Show Mood History"):
         st.bar_chart(mood_counts)
     except Exception as e:
         st.error(f"Could not load history: {e}")
+# Mood → quote mappings
+def get_quote(mood):
+    quotes = {
+        "joy": "Happiness is not something ready made. It comes from your own actions. – Dalai Lama",
+        "sadness": "Tough times never last, but tough people do. – Robert Schuller",
+        "anger": "For every minute you remain angry, you give up sixty seconds of peace. – Ralph Waldo Emerson",
+        "fear": "Do one thing every day that scares you. – Eleanor Roosevelt",
+        "love": "Love all, trust a few, do wrong to none. – Shakespeare",
+        "surprise": "Life is full of surprises. Embrace the unexpected.",
+    }
+    return quotes.get(mood.lower(), "Emotions are valid. Keep going.")
+
+# Mood → Spotify playlist links (embed)
+def get_spotify_embed(mood):
+    playlists = {
+        "joy": "https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0",  # Happy Hits
+        "sadness": "https://open.spotify.com/embed/playlist/37i9dQZF1DWVV27DiNWxkR",  # Sad Indie
+        "anger": "https://open.spotify.com/embed/playlist/37i9dQZF1DWX83CujKHHOn",  # Rock Hard
+        "fear": "https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd",  # Calming Acoustic
+        "love": "https://open.spotify.com/embed/playlist/37i9dQZF1DWXbttAJcbphz",  # Love Pop
+        "surprise": "https://open.spotify.com/embed/playlist/37i9dQZF1DX7WJ4yDmRK8R",  # Feel Good
+    }
+    return playlists.get(mood.lower())
 
