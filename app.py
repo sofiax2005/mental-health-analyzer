@@ -16,6 +16,7 @@ def get_quote(mood):
         "surprise": "Life is full of surprises. Embrace the unexpected.",
     }
     return quotes.get(mood.lower(), "Emotions are valid. Keep going.")
+
 def get_emoji(mood):
     mood_emojis = {
         "joy": "😄🎉✨",
@@ -29,12 +30,12 @@ def get_emoji(mood):
 
 def get_spotify_embed(mood):
     playlists = {
-        "joy": "https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0",      # Happy Hits
-        "sadness": "https://open.spotify.com/embed/playlist/37i9dQZF1DWVV27DiNWxkR",   # Sad Indie
-        "anger": "https://open.spotify.com/embed/playlist/37i9dQZF1DWX83CujKHHOn",     # Rock Hard
-        "fear": "https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd",      # Calming Acoustic
-        "love": "https://open.spotify.com/embed/playlist/37i9dQZF1DWXbttAJcbphz",      # Love Pop
-        "surprise": "https://open.spotify.com/embed/playlist/37i9dQZF1DX7WJ4yDmRK8R",  # Feel Good
+        "joy": "https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0",
+        "sadness": "https://open.spotify.com/embed/playlist/37i9dQZF1DWVV27DiNWxkR",
+        "anger": "https://open.spotify.com/embed/playlist/37i9dQZF1DWX83CujKHHOn",
+        "fear": "https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd",
+        "love": "https://open.spotify.com/embed/playlist/37i9dQZF1DWXbttAJcbphz",
+        "surprise": "https://open.spotify.com/embed/playlist/37i9dQZF1DX7WJ4yDmRK8R",
     }
     return playlists.get(mood.lower())
 
@@ -72,6 +73,10 @@ if st.button("Analyze Mood"):
             st.markdown("**🎧 Recommended Vibes:**")
             st.components.v1.iframe(spotify_url, height=80)
 
+        # Emoji burst
+        emoji = get_emoji(mood)
+        st.markdown(f"<h1 style='text-align: center; font-size: 72px;'>{emoji}</h1>", unsafe_allow_html=True)
+
         # Save mood entry
         data = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -87,10 +92,6 @@ if st.button("Analyze Mood"):
 
         df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
         df.to_csv("mood_log.csv", index=False)
-        
-emoji = get_emoji(mood)
-st.markdown(f"<h1 style='text-align: center; font-size: 72px;'>{emoji}</h1>", unsafe_allow_html=True)
-
 
 # ---------------------- Mood History ----------------------
 
