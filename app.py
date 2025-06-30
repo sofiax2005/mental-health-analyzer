@@ -4,11 +4,13 @@ from datetime import datetime
 
 st.title(" Mental Health Sentiment Analyzer")
 
-class DummyClassifier:
-    def __call__(self, text):
-        return [{"label": "joy", "score": 0.99}]
+from transformers import pipeline
 
-emotion_classifier = DummyClassifier()
+@st.cache_resource
+def load_model():
+    return pipeline("text-classification", model="nateraw/bert-base-uncased-emotion")
+
+emotion_classifier = load_model()
 
 entry = st.text_area("How are you feeling today?", height=200)
 
