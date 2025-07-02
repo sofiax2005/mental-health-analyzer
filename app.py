@@ -1,10 +1,9 @@
 # app.py
 import streamlit as st
+from ui.styles import get_mood_gradient
 from ui.login import login_ui
 from ui.analyzer import analyzer_ui
 from ui.history import history_ui
-from ui.styles import apply_theme
-
 st.set_page_config(page_title="Mental Health Analyzer", layout="centered")
 
 if login_ui():
