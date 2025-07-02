@@ -9,4 +9,4 @@ st.set_page_config(page_title="Mental Health Analyzer", layout="centered")
 if login_ui():
     analyzer_ui()
     history_ui()
-    apply_theme()
+    get_mood_gradient()
