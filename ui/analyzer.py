@@ -253,16 +253,19 @@ def analyzer_ui():
         with col2:
             private_mode = st.checkbox("Private entry", value=True, help="Private entries are only stored locally")
         
-        if save_button:
+               if save_button:
             try:
                 # Determine user ID
                 if "user" in st.session_state and st.session_state["user"]:
                     uid = st.session_state["user"].get("localId", "anonymous")
                 else:
                     uid = "anonymous"
-                
-                # Ensure data directory exists
-                os.makedirs("data", exist_ok=True)
+
+                # ✅ ENSURE data directory exists BEFORE anything else
+                data_dir = os.path.join(os.getcwd(), "data")
+                if not os.path.exists(data_dir):
+                    os.makedirs(data_dir)
+
                 log_file = f"data/mood_{uid}.csv"
                 
                 # Prepare entry data
