@@ -1,26 +1,24 @@
 import streamlit as st
-import pyrebase
-from transformers import pipeline
+import requests
 import pandas as pd
 import altair as alt
+from transformers import pipeline
 from datetime import datetime
 import random
 
-# ---------------------- Firebase Auth ----------------------
+# ---------------------- Firebase REST API Auth ----------------------
 
-firebase_config = {
-    "apiKey": "AIzaSyDkM5LMKrPboIXpxNN6XQz6jMV1Nodu1FY",
-    "authDomain": "analyser-944e8.firebaseapp.com",
-    "projectId": "analyser-944e8",
-    "storageBucket": "analyser-944e8.appspot.com",
-    "messagingSenderId": "595759773869",
-    "appId": "1:595759773869:web:cf837ee1bc2383669fae24",
-    "measurementId": "G-QYR7Q9L35B",
-    "databaseURL": ""
-}
+API_KEY = "AIzaSyDkM5LMKrPboIXpxNN6XQz6jMV1Nodu1FY"
+FIREBASE_SIGNUP_URL = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={API_KEY}"
+FIREBASE_SIGNIN_URL = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
 
-firebase = pyrebase.initialize_app(firebase_config)
-auth = firebase.auth()
+def firebase_signup(email, password):
+    res = requests.post(FIREBASE_SIGNUP_URL, json={"email": email, "password": password, "returnSecureToken": True})
+    return res.json()
+
+def firebase_login(email, password):
+    res = requests.post(FIREBASE_SIGNIN_URL, json={"email": email, "password": password, "returnSecureToken": True})
+    return res.json()
 
 # ---------------------- Model ----------------------
 
@@ -37,26 +35,31 @@ choice = st.sidebar.selectbox("Login or Signup", ["Login", "Signup"])
 email = st.sidebar.text_input("Email")
 password = st.sidebar.text_input("Password", type="password")
 
+if "user" not in st.session_state:
+    st.session_state.user = None
+
 if choice == "Signup":
     if st.sidebar.button("Create Account"):
-        try:
-            auth.create_user_with_email_and_password(email, password)
-            st.sidebar.success("Account created! Please log in.")
-        except Exception as e:
-            st.sidebar.error(f"Signup failed: {e}")
+        result = firebase_signup(email, password)
+        if "error" in result:
+            st.sidebar.error(f"Signup failed: {result['error']['message']}")
+        else:
+            st.sidebar.success("Account created. Please log in.")
 
 if choice == "Login":
     if st.sidebar.button("Login"):
-        try:
-            user = auth.sign_in_with_email_and_password(email, password)
-            st.session_state["user"] = user
+        result = firebase_login(email, password)
+        if "error" in result:
+            st.sidebar.error(f"Login failed: {result['error']['message']}")
+        else:
+            st.session_state.user = result
             st.sidebar.success("Logged in!")
-        except Exception as e:
-            st.sidebar.error(f"Login failed: {e}")
 
-if "user" not in st.session_state:
+if not st.session_state.user:
     st.warning("Please log in to use the app.")
     st.stop()
+
+uid = st.session_state.user["localId"]
 
 # ---------------------- Prompts ----------------------
 
@@ -107,8 +110,8 @@ def get_quote(mood):
 
 def get_emoji(mood):
     emojis = {
-        "joy": "😄🎉✨", "sadness": "😢💧🫂", "anger": "😠🔥💥",
-        "fear": "😨🫣👻", "love": "❤️🥰💖", "surprise": "😲🎁🤯"
+        "joy": "😄🎉✨", "sadness": "😢💧��", "anger": "😠🔥💥",
+        "fear": "😨🪣👻", "love": "❤️🥰💖", "surprise": "😲🏱🧯"
     }
     return emojis.get(mood.lower(), "🙂")
 
@@ -138,13 +141,11 @@ if st.button("Analyze Mood"):
 
         spotify = get_spotify_embed(mood)
         if spotify:
-            st.markdown("**🎧 Recommended Vibes:**")
+            st.markdown("**🎵 Recommended Vibes:**")
             st.components.v1.iframe(spotify, height=80)
 
         # Save per-user
-        uid = st.session_state["user"]["localId"]
         log_file = f"mood_{uid}.csv"
-
         data = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "text": entry,
@@ -164,7 +165,6 @@ if st.button("Analyze Mood"):
 
 if st.checkbox("📈 Show Mood History"):
     try:
-        uid = st.session_state["user"]["localId"]
         log_file = f"mood_{uid}.csv"
         df = pd.read_csv(log_file)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
