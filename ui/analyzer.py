@@ -21,10 +21,11 @@ def analyzer_ui():
     }
 
     selected_emoji = st.radio("Pick your vibe today:", options=list(emojis.values()), horizontal=True)
-
     mood_map = {v: k for k, v in emojis.items()}
     selected_mood = mood_map.get(selected_emoji, "joy")
 
+    # Show mood feedback immediately
+    st.subheader(f"{get_emoji(selected_mood)} {selected_mood.capitalize()} Mode Activated")
     render_lottie({
         "joy": "https://assets1.lottiefiles.com/packages/lf20_touohxv0.json",
         "sadness": "https://assets2.lottiefiles.com/packages/lf20_tnrzlN.json",
@@ -34,32 +35,30 @@ def analyzer_ui():
         "surprise": "https://assets3.lottiefiles.com/packages/lf20_4kx2q32n.json"
     }.get(selected_mood))
 
-    st.markdown(f"### {get_emoji(selected_mood)} {selected_mood.capitalize()} Journal")
     st.markdown(f"*{get_quote(selected_mood)}*")
+    st.markdown("---")
 
     # Prompts
     st.subheader("Prompt Suggestions")
     for prompt in get_journaling_prompts(selected_mood):
         st.markdown(f"- {prompt}")
 
-    # Entry
     entry = st.text_area("Write how you're feeling today:", height=150)
 
-    # Live feedback
+    # Run live analysis if any text is typed
     if entry.strip():
         result = emotion_classifier(entry)[0]
         detected_mood = result["label"]
         confidence = result["score"]
 
-        st.success(f"Detected mood: **{detected_mood}** ({confidence:.2f} confidence)")
-
+        st.success(f"AI detected mood: **{detected_mood}** ({confidence:.2f} confidence)")
         st.markdown(f"{get_emoji(detected_mood)}")
+
         spotify = get_spotify_embed(detected_mood)
         if spotify:
             st.markdown("**🎧 Recommended Playlist:**")
             st.components.v1.iframe(spotify, height=80)
 
-        # Save mood entry
         if st.button("Save Entry"):
             uid = st.session_state["user"]["localId"]
             log_file = f"data/mood_{uid}.csv"
