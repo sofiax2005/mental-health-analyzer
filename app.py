@@ -4,6 +4,7 @@ from transformers import pipeline
 import pandas as pd
 import altair as alt
 from datetime import datetime
+import random
 
 # ---------------------- Firebase Auth ----------------------
 
@@ -21,7 +22,7 @@ firebase_config = {
 firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 
-# ---------------------- Load Model ----------------------
+# ---------------------- Model ----------------------
 
 @st.cache_resource
 def load_model():
@@ -57,13 +58,47 @@ if "user" not in st.session_state:
     st.warning("Please log in to use the app.")
     st.stop()
 
-# ---------------------- Mappings ----------------------
+# ---------------------- Prompts ----------------------
+
+PROMPTS = {
+    "general": [
+        "How are you really feeling right now?",
+        "What’s one thing on your mind today?",
+        "What was the highlight and lowlight of your day?",
+        "If you could scream one thing into the void, what would it be?",
+    ],
+    "stress": [
+        "What’s currently stressing you out?",
+        "Are your thoughts spiraling? Why?",
+        "When did you last feel at peace?",
+    ],
+    "happiness": [
+        "What made you smile today?",
+        "Who or what are you grateful for?",
+        "Describe the last moment that felt truly joyful.",
+    ],
+    "self-doubt": [
+        "What’s something you’re scared to admit to yourself?",
+        "What negative thoughts are looping in your mind?",
+        "What do you wish others understood about you?",
+    ]
+}
+
+st.title("🧠 Mental Health Sentiment Analyzer")
+
+category = st.selectbox("Choose a prompt category:", list(PROMPTS.keys()))
+prompt = random.choice(PROMPTS[category])
+st.markdown(f"📝 **Prompt:** _{prompt}_")
+
+entry = st.text_area("Write your thoughts here:", height=200)
+
+# ---------------------- Mood Classifier ----------------------
 
 def get_quote(mood):
     quotes = {
         "joy": "Happiness is not something ready made. It comes from your own actions. – Dalai Lama",
         "sadness": "Tough times never last, but tough people do. – Robert Schuller",
-        "anger": "For every minute you remain angry, you give up sixty seconds of peace. – Ralph Waldo Emerson",
+        "anger": "For every minute you remain angry, you give up sixty seconds of peace. – Emerson",
         "fear": "Do one thing every day that scares you. – Eleanor Roosevelt",
         "love": "Love all, trust a few, do wrong to none. – Shakespeare",
         "surprise": "Life is full of surprises. Embrace the unexpected.",
@@ -72,52 +107,43 @@ def get_quote(mood):
 
 def get_emoji(mood):
     emojis = {
-        "joy": "😄🎉✨",
-        "sadness": "😢💧🫂",
-        "anger": "😠🔥💥",
-        "fear": "😨🫣👻",
-        "love": "❤️🥰💖",
-        "surprise": "😲🎁🤯"
+        "joy": "😄🎉✨", "sadness": "😢💧🫂", "anger": "😠🔥💥",
+        "fear": "😨🫣👻", "love": "❤️🥰💖", "surprise": "😲🎁🤯"
     }
     return emojis.get(mood.lower(), "🙂")
 
 def get_spotify_embed(mood):
-    playlists = {
-        "joy": "https://open.spotify.com/embed/playlist/7GCeanb0LGc6KOnvMvpIFK?si=CL2IoAANTYyC47XRa69A9w",
+    urls = {
+        "joy": "https://open.spotify.com/embed/playlist/5v7CLKGWzVbkWO8FyuG12C",
         "sadness": "https://open.spotify.com/embed/playlist/37i9dQZF1DWVV27DiNWxkR",
         "anger": "https://open.spotify.com/embed/playlist/37i9dQZF1DWX83CujKHHOn",
         "fear": "https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd",
         "love": "https://open.spotify.com/embed/playlist/37i9dQZF1DWXbttAJcbphz",
         "surprise": "https://open.spotify.com/embed/playlist/37i9dQZF1DX7WJ4yDmRK8R",
     }
-    return playlists.get(mood.lower())
-
-# ---------------------- Main Analyzer ----------------------
-
-st.title("🧠 Mental Health Sentiment Analyzer")
-
-entry = st.text_area("How are you feeling today? Type anything…", height=200)
-
-uid = st.session_state["user"]["localId"]
-log_file = f"mood_{uid}.csv"
+    return urls.get(mood.lower())
 
 if st.button("Analyze Mood"):
     if entry.strip() == "":
         st.warning("C’mon, type something first!")
     else:
         result = emotion_classifier(entry)[0]
-        mood = result["label"]
-        score = result["score"]
+        mood = result['label']
+        score = result['score']
 
         st.success(f"**Detected Mood**: {mood} ({score:.2f} confidence)")
         st.markdown(f"💬 *{get_quote(mood)}*")
+        emoji = get_emoji(mood)
+        st.markdown(f"<h1 style='text-align: center; font-size: 72px;'>{emoji}</h1>", unsafe_allow_html=True)
 
-        spotify_url = get_spotify_embed(mood)
-        if spotify_url:
+        spotify = get_spotify_embed(mood)
+        if spotify:
             st.markdown("**🎧 Recommended Vibes:**")
-            st.components.v1.iframe(spotify_url, height=80)
+            st.components.v1.iframe(spotify, height=80)
 
-        st.markdown(f"<h1 style='text-align: center; font-size: 72px;'>{get_emoji(mood)}</h1>", unsafe_allow_html=True)
+        # Save per-user
+        uid = st.session_state["user"]["localId"]
+        log_file = f"mood_{uid}.csv"
 
         data = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -134,57 +160,30 @@ if st.button("Analyze Mood"):
         df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
         df.to_csv(log_file, index=False)
 
-        st.success("Mood saved!")
-
-# ---------------------- Mood History + Edit/Delete ----------------------
+# ---------------------- Mood History ----------------------
 
 if st.checkbox("📈 Show Mood History"):
     try:
+        uid = st.session_state["user"]["localId"]
+        log_file = f"mood_{uid}.csv"
         df = pd.read_csv(log_file)
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        df["mood"] = df["mood"].astype(str)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['mood'] = df['mood'].astype(str).str.capitalize()
 
-        st.subheader("Your Mood Log")
-        for i, row in df.iterrows():
-            with st.expander(f"{row['timestamp']} — {row['mood']}"):
-                st.markdown(f"**Mood:** {row['mood']} ({row['confidence']:.2f})")
-                st.markdown(f"**Text:** {row['text']}")
-                
-                col1, col2 = st.columns(2)
-                if col1.button("✏️ Edit", key=f"edit_{i}"):
-                    st.session_state["edit_index"] = i
-                if col2.button("🗑️ Delete", key=f"delete_{i}"):
-                    df.drop(i, inplace=True)
-                    df.to_csv(log_file, index=False)
-                    st.success("Entry deleted.")
-                    st.rerun()
+        st.dataframe(df.tail(10))
 
-        if "edit_index" in st.session_state:
-            idx = st.session_state["edit_index"]
-            st.subheader("✏️ Edit Entry")
-            existing_text = df.at[idx, "text"]
-            new_text = st.text_area("Update your entry:", value=existing_text, key="edit_text")
-
-            if st.button("Save Changes"):
-                new_result = emotion_classifier(new_text)[0]
-                df.at[idx, "text"] = new_text
-                df.at[idx, "mood"] = new_result["label"]
-                df.at[idx, "confidence"] = new_result["score"]
-                df.to_csv(log_file, index=False)
-                del st.session_state["edit_index"]
-                st.success("Entry updated!")
-                st.rerun()
-
-        # Graph
         chart = alt.Chart(df).mark_line(point=True).encode(
-            x=alt.X("timestamp:T", title="Time"),
-            y=alt.Y("mood:N", title="Mood"),
-            color="mood:N",
-            tooltip=["timestamp", "mood", "text"]
-        ).properties(title="Mood Over Time", width=700, height=400).interactive()
+            x=alt.X('timestamp:T', title='Time'),
+            y=alt.Y('mood:N', title='Detected Mood'),
+            color='mood:N',
+            tooltip=['timestamp', 'mood', 'text']
+        ).properties(
+            title='Mood Over Time',
+            width=700,
+            height=400
+        ).interactive()
 
         st.altair_chart(chart, use_container_width=True)
-
     except Exception as e:
         st.error("No mood history yet. Go vent some feelings first.")
         st.caption(f"Debug info: {e}")
