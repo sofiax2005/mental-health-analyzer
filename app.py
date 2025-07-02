@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+os.makedirs("data", exist_ok=True)
 from ui.styles import apply_gradient_background, initialize_theme
 from ui.login import login_ui
 from ui.analyzer import analyzer_ui
