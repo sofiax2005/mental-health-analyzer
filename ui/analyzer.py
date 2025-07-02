@@ -16,14 +16,28 @@ emotion_classifier = load_model()
 def analyzer_ui():
     st.header("🧠 Mood Analyzer")
 
-    emojis = {
-        "joy": "😄", "sadness": "😢", "anger": "😠",
-        "fear": "😨", "love": "❤️", "surprise": "😲"
-    }
+    # 1. Map emoji → mood (extend as needed)
+emoji_to_mood = {
+    "😊": "happy",
+    "😢": "sad",
+    "😡": "angry",
+    "😌": "calm",
+    "😰": "stressed",
+    "😔": "anxious",
+}
+selected_mood = emoji_to_mood.get(selected_emoji, "neutral")
 
-    selected_emoji = st.radio("Pick your vibe today:", options=list(emojis.values()), horizontal=True)
-    mood_map = {v: k for k, v in emojis.items()}
-    selected_mood = mood_map.get(selected_emoji, "joy")
+# 2. Apply the gradient
+apply_gradient(selected_mood)
+
+# 3. Show “low mood” panel if needed
+LOW_MOODS = {"sad", "angry", "stressed", "anxious", "lonely"}
+if selected_mood in LOW_MOODS:
+    with st.expander("💙 Need a pick‑me‑up?", expanded=True):
+        st.write("✨ “This too shall pass.”")
+        st.write("Here’s a calming playlist or a fun GIF to lift your spirits!")
+        # (Embed Spotify/GIFs/etc. here)
+
 
     # Show mood feedback immediately
     st.subheader(f"{get_emoji(selected_mood)} {selected_mood.capitalize()} Mode Activated")
