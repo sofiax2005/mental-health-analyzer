@@ -6,7 +6,7 @@ from utils.file_utils import safe_csv_save
 
 def history_ui():
     uid = st.session_state["user"]["localId"]
-    log_file = f"mood_{uid}.csv"
+    log_file = f"data/mood_{uid}.csv"  # ✅ use a folder and consistent path
 
     if st.checkbox("📈 Show Mood History"):
         try:
@@ -30,7 +30,8 @@ def history_ui():
                         st.session_state["edit_index"] = i
                     if col2.button("🗑️ Delete", key=f"delete_{i}"):
                         df.drop(i, inplace=True)
-                        safe_csv_save(mood_df, "data/mood_logs.csv")
+                        df.reset_index(drop=True, inplace=True)
+                        safe_csv_save(df, log_file)  # ✅ fixed variable name + path
                         st.success("Entry deleted.")
                         st.rerun()
 
@@ -47,7 +48,7 @@ def history_ui():
                     df.at[idx, "text"] = new_text
                     df.at[idx, "mood"] = new_result["label"]
                     df.at[idx, "confidence"] = new_result["score"]
-                    df.to_csv(log_file, index=False)
+                    safe_csv_save(df, log_file)  # ✅ use safe save here too
                     del st.session_state["edit_index"]
                     st.success("Entry updated!")
                     st.rerun()
