@@ -62,9 +62,9 @@ log_file = f"mood_{uid}.csv"
 
 def get_quote(mood):
     quotes = {
-        "joy": "Happiness is not something ready made. It comes from your own actions. – Dalai Lama",
+        "joy": "Happiness is not something ready made. – Dalai Lama",
         "sadness": "Tough times never last, but tough people do. – Robert Schuller",
-        "anger": "For every minute you remain angry, you give up sixty seconds of peace. – Ralph Waldo Emerson",
+        "anger": "You give up peace for every minute of anger. – Emerson",
         "fear": "Do one thing every day that scares you. – Eleanor Roosevelt",
         "love": "Love all, trust a few, do wrong to none. – Shakespeare",
         "surprise": "Life is full of surprises. Embrace the unexpected.",
@@ -84,7 +84,7 @@ def get_emoji(mood):
 
 def get_spotify_embed(mood):
     playlists = {
-        "joy": "https://open.spotify.com/embed/playlist/5v7CLKGWzVbkWO8FyuG12C?si=CnJO2eLLRBuShrfIEKBngg",
+        "joy": "https://open.spotify.com/embed/playlist/5v7CLKGWzVbkWO8FyuG12C",
         "sadness": "https://open.spotify.com/embed/playlist/37i9dQZF1DWVV27DiNWxkR",
         "anger": "https://open.spotify.com/embed/playlist/37i9dQZF1DWX83CujKHHOn",
         "fear": "https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd",
@@ -93,11 +93,30 @@ def get_spotify_embed(mood):
     }
     return playlists.get(mood.lower())
 
+def get_journaling_prompts(mood):
+    prompts = {
+        "joy": ["What brought you joy today?", "How can you carry this feeling into tomorrow?"],
+        "sadness": ["What’s weighing on your heart right now?", "Who or what might help you feel better?"],
+        "anger": ["What triggered your anger?", "What could help release this tension?"],
+        "fear": ["What are you afraid might happen?", "How can you feel safer?"],
+        "love": ["Who or what are you feeling love for today?", "How can you express it?"],
+        "surprise": ["What surprised you today?", "How did it make you feel?"],
+        "general": ["What’s on your mind right now?", "Anything you want to remember from today?"]
+    }
+    return prompts.get(mood.lower(), prompts["general"])
+
 # ---------------------- Main Analyzer ----------------------
 
 st.title("🧠 Mental Health Sentiment Analyzer")
 
+# Show general prompts early
+with st.expander("💡 Not sure where to start? Here are some journaling questions"):
+    for q in get_journaling_prompts("general"):
+        st.markdown(f"- {q}")
+
 entry = st.text_area("How are you feeling today? Type anything…", height=200)
+tags = st.text_input("🏷️ Add tags (comma-separated):")
+rating = st.slider("🌤️ Rate your day (1 = rough, 5 = awesome)", 1, 5, 3)
 
 if st.button("Analyze Mood"):
     if entry.strip() == "":
@@ -117,12 +136,22 @@ if st.button("Analyze Mood"):
 
         st.markdown(f"<h1 style='text-align: center; font-size: 72px;'>{get_emoji(mood)}</h1>", unsafe_allow_html=True)
 
+        journaling_answers = {}
+        with st.expander("📝 Reflect with these questions"):
+            for i, q in enumerate(get_journaling_prompts(mood)):
+                journaling_answers[q] = st.text_area(f"Q{i+1}: {q}", key=f"journal_q{i}")
+
         data = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "text": entry,
             "mood": mood,
-            "confidence": score
+            "confidence": score,
+            "tags": tags,
+            "rating": rating
         }
+
+        for q, a in journaling_answers.items():
+            data[q] = a
 
         try:
             df = pd.read_csv(log_file)
@@ -132,7 +161,7 @@ if st.button("Analyze Mood"):
         df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
         df.to_csv(log_file, index=False)
 
-        st.success("Mood saved!")
+        st.success("Mood and reflections saved!")
 
 # ---------------------- Mood History + Edit/Delete ----------------------
 
@@ -140,14 +169,19 @@ if st.checkbox("📈 Show Mood History"):
     try:
         df = pd.read_csv(log_file)
         df["timestamp"] = pd.to_datetime(df["timestamp"])
-        df["mood"] = df["mood"].astype(str)
 
         st.subheader("Your Mood Log")
         for i, row in df.iterrows():
             with st.expander(f"{row['timestamp']} — {row['mood']}"):
                 st.markdown(f"**Mood:** {row['mood']} ({row['confidence']:.2f})")
                 st.markdown(f"**Text:** {row['text']}")
-                
+                st.markdown(f"**Tags:** {row.get('tags', '')}")
+                st.markdown(f"**Rating:** {row.get('rating', '')}")
+
+                for q in get_journaling_prompts(row['mood']):
+                    if q in row:
+                        st.markdown(f"**{q}**\n{row[q]}")
+
                 col1, col2 = st.columns(2)
                 if col1.button("✏️ Edit", key=f"edit_{i}"):
                     st.session_state["edit_index"] = i
@@ -173,7 +207,6 @@ if st.checkbox("📈 Show Mood History"):
                 st.success("Entry updated!")
                 st.rerun()
 
-        # Graph
         chart = alt.Chart(df).mark_line(point=True).encode(
             x=alt.X("timestamp:T", title="Time"),
             y=alt.Y("mood:N", title="Mood"),
