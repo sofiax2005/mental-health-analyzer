@@ -1,14 +1,17 @@
 # ui/styles.py
-def get_mood_gradient(mood):
-    gradients = {
-        "happy": "linear-gradient(to right, #fceabb, #f8b500)",
-        "sad": "linear-gradient(to right, #a1c4fd, #c2e9fb)",
-        "angry": "linear-gradient(to right, #ff512f, #dd2476)",
-        "calm": "linear-gradient(to right, #89f7fe, #66a6ff)",
-        "stressed": "linear-gradient(to right, #e96443, #904e95)",
-        "neutral": "linear-gradient(to right, #bdc3c7, #2c3e50)"
-    }
-    return gradients.get(mood, gradients["neutral"])  # default to neutral
+# styles.py
+
+def get_mood_gradient(mood: str) -> str:
+    """Return a CSS gradient string for a given mood."""
+    return {
+        "happy":   "linear-gradient(to right, #fceabb, #f8b500)",
+        "sad":     "linear-gradient(to right, #a1c4fd, #c2e9fb)",
+        "angry":   "linear-gradient(to right, #ff512f, #dd2476)",
+        "calm":    "linear-gradient(to right, #89f7fe, #66a6ff)",
+        "stressed":"linear-gradient(to right, #e96443, #904e95)",
+        # fallback
+    }.get(mood, "linear-gradient(to right, #bdc3c7, #2c3e50)")
+ # default to neutral
 
 
 def apply_gradient_background(mood):
