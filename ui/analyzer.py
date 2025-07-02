@@ -4,7 +4,8 @@ from transformers import pipeline
 from datetime import datetime
 import pandas as pd
 from utils.mappings import get_quote, get_emoji, get_spotify_embed, get_journaling_prompts
-from ui.styles import render_lottie
+from ui.styles import apply_theme
+apply_theme(selected_mood)
 
 @st.cache_resource
 def load_model():
