@@ -1,8 +1,10 @@
+# ui/analyzer.py
 import streamlit as st
-import pandas as pd
-from datetime import datetime
 from transformers import pipeline
+from datetime import datetime
+import pandas as pd
 from utils.mappings import get_quote, get_emoji, get_spotify_embed, get_journaling_prompts
+from ui.styles import render_lottie
 
 @st.cache_resource
 def load_model():
@@ -11,60 +13,68 @@ def load_model():
 emotion_classifier = load_model()
 
 def analyzer_ui():
-    uid = st.session_state["user"]["localId"]
-    log_file = f"mood_{uid}.csv"
+    st.header("🧠 Mood Analyzer")
 
-    st.title("🧠 Mental Health Sentiment Analyzer")
+    emojis = {
+        "joy": "😄", "sadness": "😢", "anger": "😠",
+        "fear": "😨", "love": "❤️", "surprise": "😲"
+    }
 
-    with st.expander("💡 Not sure where to start? Here are some journaling questions"):
-        for q in get_journaling_prompts("general"):
-            st.markdown(f"- {q}")
+    selected_emoji = st.radio("Pick your vibe today:", options=list(emojis.values()), horizontal=True)
 
-    entry = st.text_area("How are you feeling today? Type anything…", height=200)
-    tags = st.text_input("🏷️ Add tags (comma-separated):")
-    rating = st.slider("🌤️ Rate your day (1 = rough, 5 = awesome)", 1, 5, 3)
+    mood_map = {v: k for k, v in emojis.items()}
+    selected_mood = mood_map.get(selected_emoji, "joy")
 
-    if st.button("Analyze Mood"):
-        if entry.strip() == "":
-            st.warning("C’mon, type something first!")
-        else:
-            result = emotion_classifier(entry)[0]
-            mood = result["label"]
-            score = result["score"]
+    render_lottie({
+        "joy": "https://assets1.lottiefiles.com/packages/lf20_touohxv0.json",
+        "sadness": "https://assets2.lottiefiles.com/packages/lf20_tnrzlN.json",
+        "anger": "https://assets7.lottiefiles.com/packages/lf20_zxytv7ny.json",
+        "fear": "https://assets5.lottiefiles.com/packages/lf20_j1adxtyb.json",
+        "love": "https://assets4.lottiefiles.com/packages/lf20_jtkhrafb.json",
+        "surprise": "https://assets3.lottiefiles.com/packages/lf20_4kx2q32n.json"
+    }.get(selected_mood))
 
-            st.success(f"**Detected Mood**: {mood} ({score:.2f} confidence)")
-            st.markdown(f"💬 *{get_quote(mood)}*")
+    st.markdown(f"### {get_emoji(selected_mood)} {selected_mood.capitalize()} Journal")
+    st.markdown(f"*{get_quote(selected_mood)}*")
 
-            spotify_url = get_spotify_embed(mood)
-            if spotify_url:
-                st.markdown("**🎧 Recommended Vibes:**")
-                st.components.v1.iframe(spotify_url, height=80)
+    # Prompts
+    st.subheader("Prompt Suggestions")
+    for prompt in get_journaling_prompts(selected_mood):
+        st.markdown(f"- {prompt}")
 
-            st.markdown(f"<h1 style='text-align: center; font-size: 72px;'>{get_emoji(mood)}</h1>", unsafe_allow_html=True)
+    # Entry
+    entry = st.text_area("Write how you're feeling today:", height=150)
 
-            journaling_answers = {}
-            with st.expander("📝 Reflect with these questions"):
-                for i, q in enumerate(get_journaling_prompts(mood)):
-                    journaling_answers[q] = st.text_area(f"Q{i+1}: {q}", key=f"journal_q{i}")
+    # Live feedback
+    if entry.strip():
+        result = emotion_classifier(entry)[0]
+        detected_mood = result["label"]
+        confidence = result["score"]
 
-            data = {
+        st.success(f"Detected mood: **{detected_mood}** ({confidence:.2f} confidence)")
+
+        st.markdown(f"{get_emoji(detected_mood)}")
+        spotify = get_spotify_embed(detected_mood)
+        if spotify:
+            st.markdown("**🎧 Recommended Playlist:**")
+            st.components.v1.iframe(spotify, height=80)
+
+        # Save mood entry
+        if st.button("Save Entry"):
+            uid = st.session_state["user"]["localId"]
+            log_file = f"data/mood_{uid}.csv"
+            new_entry = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "text": entry,
-                "mood": mood,
-                "confidence": score,
-                "tags": tags,
-                "rating": rating
+                "mood": detected_mood,
+                "confidence": confidence
             }
-
-            for q, a in journaling_answers.items():
-                data[q] = a
 
             try:
                 df = pd.read_csv(log_file)
             except FileNotFoundError:
                 df = pd.DataFrame()
 
-            df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
+            df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
             df.to_csv(log_file, index=False)
-
-            st.success("Mood and reflections saved!")
+            st.success("Mood saved!")
