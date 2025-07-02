@@ -1,5 +1,5 @@
 streamlit
-pyrebase
+requests
 transformers
 pandas
 matplotlib
