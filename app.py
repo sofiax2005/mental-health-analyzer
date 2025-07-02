@@ -1,5 +1,5 @@
 import streamlit as st
-import requests
+import pyrebase as pyrebase4
 from transformers import pipeline
 import pandas as pd
 import altair as alt
