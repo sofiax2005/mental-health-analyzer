@@ -2,10 +2,11 @@
 def apply_theme():
     import streamlit as st
     st.markdown("""
+        <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
         <style>
-        .stApp {
+        body, .stApp {
             background-color: #f0f4f8;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI", sans-serif;
         }
         h1, h2, h3, h4 {
             color: #2c3e50;
