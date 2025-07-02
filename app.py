@@ -1,25 +1,23 @@
 import streamlit as st
-import pyrebase as pyrebase4
+import requests
 from transformers import pipeline
 import pandas as pd
 import altair as alt
 from datetime import datetime
 
-# ---------------------- Firebase Auth ----------------------
+# ---------------------- Firebase REST Auth ----------------------
 
-firebase_config = {
-    "apiKey": "AIzaSyDkM5LMKrPboIXpxNN6XQz6jMV1Nodu1FY",
-    "authDomain": "analyser-944e8.firebaseapp.com",
-    "projectId": "analyser-944e8",
-    "storageBucket": "analyser-944e8.appspot.com",
-    "messagingSenderId": "595759773869",
-    "appId": "1:595759773869:web:cf837ee1bc2383669fae24",
-    "measurementId": "G-QYR7Q9L35B",
-    "databaseURL": ""
-}
+FIREBASE_API_KEY = "AIzaSyDkM5LMKrPboIXpxNN6XQz6jMV1Nodu1FY"
 
-firebase = pyrebase4.initialize_app(firebase_config)
-auth = firebase.auth()
+def signup_user(email, password):
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
+    payload = {"email": email, "password": password, "returnSecureToken": True}
+    return requests.post(url, json=payload).json()
+
+def login_user(email, password):
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+    payload = {"email": email, "password": password, "returnSecureToken": True}
+    return requests.post(url, json=payload).json()
 
 # ---------------------- Load Model ----------------------
 
@@ -38,24 +36,27 @@ password = st.sidebar.text_input("Password", type="password")
 
 if choice == "Signup":
     if st.sidebar.button("Create Account"):
-        try:
-            auth.create_user_with_email_and_password(email, password)
+        response = signup_user(email, password)
+        if "error" in response:
+            st.sidebar.error(f"Signup failed: {response['error']['message']}")
+        else:
             st.sidebar.success("Account created! Please log in.")
-        except Exception as e:
-            st.sidebar.error(f"Signup failed: {e}")
 
 if choice == "Login":
     if st.sidebar.button("Login"):
-        try:
-            user = auth.sign_in_with_email_and_password(email, password)
-            st.session_state["user"] = user
+        response = login_user(email, password)
+        if "error" in response:
+            st.sidebar.error(f"Login failed: {response['error']['message']}")
+        else:
+            st.session_state["user"] = response
             st.sidebar.success("Logged in!")
-        except Exception as e:
-            st.sidebar.error(f"Login failed: {e}")
 
 if "user" not in st.session_state:
     st.warning("Please log in to use the app.")
     st.stop()
+
+uid = st.session_state["user"]["localId"]
+log_file = f"mood_{uid}.csv"
 
 # ---------------------- Mappings ----------------------
 
@@ -97,9 +98,6 @@ def get_spotify_embed(mood):
 st.title("🧠 Mental Health Sentiment Analyzer")
 
 entry = st.text_area("How are you feeling today? Type anything…", height=200)
-
-uid = st.session_state["user"]["localId"]
-log_file = f"mood_{uid}.csv"
 
 if st.button("Analyze Mood"):
     if entry.strip() == "":
