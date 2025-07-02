@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from utils.mappings import get_journaling_prompts
+from utils.file_utils import safe_csv_save
 
 def history_ui():
     uid = st.session_state["user"]["localId"]
@@ -29,7 +30,7 @@ def history_ui():
                         st.session_state["edit_index"] = i
                     if col2.button("🗑️ Delete", key=f"delete_{i}"):
                         df.drop(i, inplace=True)
-                        df.to_csv(log_file, index=False)
+                        safe_csv_save(mood_df, "data/mood_logs.csv")
                         st.success("Entry deleted.")
                         st.rerun()
 
