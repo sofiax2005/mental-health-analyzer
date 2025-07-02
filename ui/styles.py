@@ -5,7 +5,7 @@ def apply_theme():
         <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
         <style>
         body, .stApp {
-            background-color: #f0f4f8;
+            background-color: #f3f9ff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI", sans-serif;
         }
         h1, h2, h3, h4 {
