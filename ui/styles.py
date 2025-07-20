@@ -80,7 +80,7 @@ def apply_gradient_background(mood):
     """, unsafe_allow_html=True)
 
 
-def render_lottie(url, height=300, key=None):
+def render_lottie(url, height=300):
     """
     Renders Lottie animations with proper script loading and container styling
     """
@@ -118,7 +118,7 @@ def render_lottie(url, height=300, key=None):
     </div>
     """
     
-    st.components.v1.html(lottie_html, height=height + 50, key=key)
+    st.components.v1.html(lottie_html, height=height + 50)
 
 
 def apply_mood_specific_styling(mood):
