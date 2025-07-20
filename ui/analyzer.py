@@ -253,7 +253,7 @@ def analyzer_ui():
         with col2:
             private_mode = st.checkbox("Private entry", value=True, help="Private entries are only stored locally")
         
-               if save_button:
+        if save_button:
             try:
                 # Determine user ID
                 if "user" in st.session_state and st.session_state["user"]:
