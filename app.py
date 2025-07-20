@@ -71,10 +71,9 @@ def main():
         elif selected_section == "settings":
             st.info("Settings coming soon!")
         elif selected_section == "logout":
-            elif selected_section == "logout":
-                st.session_state.clear()
-                st.success("You've been logged out. Refreshing...")
-                st.rerun()  # <-- This is the correct call now
+            st.session_state.clear()
+            st.success("You've been logged out. Refreshing...")
+            st.rerun()  # <-- This is the correct call now
 
 
     except Exception as e:
