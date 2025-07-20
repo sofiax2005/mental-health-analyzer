@@ -77,7 +77,7 @@ def main():
     
     except Exception as e:
         st.error(f"Something broke in main(): {e}")
-
-# 🧠 Actually run the main function!
 if __name__ == "__main__":
-    main()
+    logged_in = login_ui()
+    if logged_in:
+        st.success("Welcome to the Mental Health Analyzer!")
