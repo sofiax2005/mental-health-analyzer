@@ -1,16 +1,17 @@
 import streamlit as st
+import pandas as pd
 import os
 
-# Create data directory
+# --- Ensure "data" folder exists before anything else ---
 os.makedirs("data", exist_ok=True)
 
-# Import your custom modules
-from ui.styles import apply_gradient_background, initialize_theme
+# --- Import your custom modules ---
 from ui.login import login_ui
+from ui.styles import apply_gradient_background, initialize_theme
 from ui.analyzer import analyzer_ui
 from ui.history import history_ui
 
-# Configure Streamlit page (do this only once)
+# --- Page config (once!) ---
 st.set_page_config(
     page_title="Mental Health Analyzer",
     page_icon="🧠",
@@ -18,55 +19,50 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# --- Force login before rendering anything else ---
+if not login_ui():
+    st.stop()
+
 def show_navigation():
-    """Show navigation sidebar"""
+    """Render sidebar nav and return the chosen section key."""
     with st.sidebar:
         st.title("🧠 Navigation")
-
-        nav_options = {
+        options = {
             "🎭 Mood Analyzer": "analyzer",
-            "📊 History & Insights": "history", 
+            "📊 History & Insights": "history",
             "⚙️ Settings": "settings",
             "🚪 Logout": "logout"
         }
-
-        return nav_options[selected]
+        # Use a clear name for the radio's value
+        choice = st.radio("Choose a section:", list(options.keys()))
+        return options[choice]
 
 def main():
     try:
-        # Handle login first (before theme stuff)
-        if not login_ui():
-            st.stop()
-
-        # Initialize theme
+        # Initialize theme & background
         initialize_theme()
+        current_mood = st.session_state.get("current_mood", "neutral")
+        apply_gradient_background(current_mood)
 
-        # Set default mood
-        if "current_mood" not in st.session_state:
-            st.session_state.current_mood = "neutral"
-
-        apply_gradient_background(st.session_state.current_mood)
-
-        # Show main UI
+        # Show the app title
         st.title("🧠 Mental Health Analyzer")
-
-        # Navigation
-        selected_section = show_navigation()
         st.markdown("---")
 
-        # Routing
-        if selected_section == "analyzer":
+        # Sidebar navigation
+        section = show_navigation()
+        st.markdown("---")
+
+        # Route to the right UI
+        if section == "analyzer":
             analyzer_ui()
-        elif selected_section == "history":
-            try:
-                history_ui()
-            except Exception as e:
-                st.error(f"Error loading history: {e}")
-        elif selected_section == "settings":
-            st.info("Settings coming soon!")
-        elif selected_section == "logout":
+        elif section == "history":
+            history_ui()
+        elif section == "settings":
+            st.info("⚙️ Settings coming soon!")
+        elif section == "logout":
             st.session_state.clear()
-            st.success("You've been logged out. Refresh the page to log in again.")
+            st.success("You’ve been logged out. Redirecting to login…")
+            st.rerun()
 
     except Exception as e:
         st.error(f"Something broke in main(): {e}")
