@@ -30,12 +30,6 @@ def show_navigation():
             "🚪 Logout": "logout"
         }
 
-        selected = st.radio(
-            "Choose a section:",
-            list(nav_options.keys()),
-            index=0
-        )
-
         return nav_options[selected]
 
 def main():
