@@ -103,63 +103,55 @@ def analyzer_ui():
     st.header("🧠 Mental Health Mood Analyzer")
     st.markdown("*Track your emotions, get AI insights, and find personalized support*")
 
+    # --- Mood Picker ---
     emoji_to_mood = {
         "😊": "happy", "😢": "sad", "😠": "angry", "😌": "calm",
         "😰": "stressed", "😔": "anxious", "🥰": "love", "😮": "surprise"
     }
-
     st.subheader("🎭 How are you feeling right now?")
-    col1, col2 = st.columns([3, 1])
-
+    col1, _ = st.columns([3, 1])
     with col1:
-        emoji_options = list(emoji_to_mood.keys())
         selected_emoji = st.radio(
             "Select your current mood:",
-            emoji_options,
+            list(emoji_to_mood.keys()),
             format_func=lambda x: f"{x} {emoji_to_mood[x].capitalize()}",
             horizontal=True,
             key="mood_selector"
         )
+    mood = emoji_to_mood.get(selected_emoji, "neutral")
 
-    selected_mood = emoji_to_mood.get(selected_emoji, "neutral")
-    apply_gradient_background(selected_mood)
-    apply_mood_specific_styling(selected_mood)
-
+    # --- Dynamic Styling & Animation ---
+    apply_gradient_background(mood)
+    apply_mood_specific_styling(mood)
     st.markdown("---")
-    st.subheader(f"{get_emoji(selected_mood)} {selected_mood.capitalize()} Mode Activated")
+    st.subheader(f"{get_emoji(mood)} {mood.capitalize()} Mode Activated")
 
+    # --- Lottie Animation ---
     lottie_urls = {
-        "happy": "https://assets1.lottiefiles.com/packages/lf20_touohxv0.json",
-        "sad": "https://assets2.lottiefiles.com/packages/lf20_tnrzlN.json",
-        "angry": "https://assets7.lottiefiles.com/packages/lf20_zxytv7ny.json",
-        "calm": "https://assets5.lottiefiles.com/packages/lf20_V9t630.json",
-        "stressed": "https://assets8.lottiefiles.com/packages/lf20_9wpyhdzo.json",
-        "anxious": "https://assets6.lottiefiles.com/packages/lf20_k6tuc9eq.json",
-        "love": "https://assets4.lottiefiles.com/packages/lf20_jtkhrafb.json",
-        "surprise": "https://assets3.lottiefiles.com/packages/lf20_4kx2q32n.json"
+        # ... (your lottie URL dict) ...
     }
+    if mood in lottie_urls:
+        render_lottie(lottie_urls[mood], height=250, key=f"lottie_{mood}")
 
-    if selected_mood in lottie_urls:
-        render_lottie(lottie_urls[selected_mood], height=250, key=f"lottie_{selected_mood}")
-
-    quote = get_quote(selected_mood)
+    # --- Quote ---
+    quote = get_quote(mood)
     if quote:
         st.markdown(f"*✨ {quote}*")
-
     st.markdown("---")
 
-    LOW_MOODS = {"sad", "angry", "stressed", "anxious"}
-    if selected_mood in LOW_MOODS:
-        show_expandable_support(selected_mood)
+    # --- Support Section ---
+    if mood in {"sad", "angry", "stressed", "anxious"}:
+        show_expandable_support(mood)
         st.markdown("---")
 
+    # --- Journaling Prompts ---
     st.subheader("📝 Journal Your Thoughts")
-    prompts = get_journaling_prompts(selected_mood)
+    prompts = get_journaling_prompts(mood)
     if prompts:
-        st.markdown("**💡 Writing Prompts:**")
-        for i, prompt in enumerate(prompts[:3], 1):
+        for i, prompt in enumerate(prompts, 1):
             st.markdown(f"{i}. {prompt}")
 
+    # --- Text Entry ---
     entry = st.text_area(
         "Write about how you're feeling today:",
         height=150,
@@ -167,80 +159,65 @@ def analyzer_ui():
         key="journal_entry"
     )
 
-    if entry.strip():
-        st.subheader("🤖 AI Emotion Analysis")
-        emotion_classifier = load_model()
-        if emotion_classifier:
-            try:
-                with st.spinner("Analyzing your emotions..."):
-                    results = emotion_classifier(entry)
-                    if results:
-                        top_result = max(results[0], key=lambda x: x['score'])
-                        detected_mood = top_result["label"]
-                        confidence = top_result["score"]
+    # --- Save Logic ---
+    st.subheader("💾 Save Your Entry")
+    col1, col2 = st.columns(2)
+    with col1:
+        save_button = st.button("Save Journal Entry")
+    with col2:
+        private_mode = st.checkbox("Private entry", value=True)
 
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.success(f"**Primary Emotion:** {detected_mood.capitalize()}")
-                            st.info(f"**Confidence:** {confidence:.1%}")
-                        with col2:
-                            st.markdown(f"**Emotion Icon:** {get_emoji(detected_mood)}")
+    if save_button:
+        # 1) Determine UID
+        user = st.session_state.get("user", {})
+        uid = user.get("localId") or user.get("uid") or "anonymous"
 
-                        st.subheader("📊 Emotion Breakdown")
-                        sorted_results = sorted(results[0], key=lambda x: x['score'], reverse=True)[:3]
-                        for i, result in enumerate(sorted_results, 1):
-                            emotion = result['label']
-                            score = result['score']
-                            st.progress(score)
-                            st.markdown(f"{i}. **{emotion.capitalize()}**: {score:.1%}")
+        # 2) Ensure data folder exists
+        data_dir = os.path.join(os.getcwd(), "data")
+        os.makedirs(data_dir, exist_ok=True)
 
-            except Exception as e:
-                st.error(f"Error analyzing emotions: {e}")
-                st.info("Don't worry - you can still save your journal entry!")
+        # 3) Path to CSV
+        log_file = os.path.join(data_dir, f"mood_{uid}.csv")
 
-        st.subheader("🎵 Mood-Based Music")
-        spotify_embed = get_spotify_embed(selected_mood)
-        if spotify_embed:
-            st.markdown("**Recommended playlist for your mood:**")
-            st.components.v1.iframe(spotify_embed, height=152)
-
-        st.subheader("💾 Save Your Entry")
-        col1, col2 = st.columns(2)
-        with col1:
-            save_button = st.button("💾 Save Journal Entry", type="primary")
-        with col2:
-            private_mode = st.checkbox("Private entry", value=True, help="Private entries are only stored locally")
-
-        if save_button:
-            try:
-                log_file = f"data/mood_{uid}.csv"
-        
-        # **Insert this guard BEFORE you call pd.read_csv()**
-                os.makedirs("data", exist_ok=True)
-                try:
-                    df = pd.read_csv(log_file)
-                except FileNotFoundError:
-            # first time: start an empty DataFrame with your columns
-                    df = pd.DataFrame(columns=[
-                "timestamp", "selected_mood",
-                "detected_emotion", "confidence",
-                "text", "private"
+        # 4) Load or bootstrap DataFrame
+        try:
+            df = pd.read_csv(log_file)
+        except FileNotFoundError:
+            df = pd.DataFrame(columns=[
+                "timestamp", "mood", "detected_emotion",
+                "confidence", "text", "private"
             ])
-                    df.to_csv(log_file, index=False)
-                df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
-                df.to_csv(log_file, index=False)
+            df.to_csv(log_file, index=False)
 
-                st.success("✅ Journal entry saved successfully!")
-                st.balloons()
-            except Exception as e:
-                st.error(f"Error saving entry: {e}")
-                st.info("You can try copying your text and saving it manually.")
+        # 5) Prepare new entry
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Use AI result if available
+        detected = locals().get("detected_mood", mood)
+        conf     = locals().get("confidence", 0.0)
+        text     = entry if not private_mode else "[Private Entry]"
 
+        new_entry = {
+            "timestamp": timestamp,
+            "mood": mood,
+            "detected_emotion": detected,
+            "confidence": conf,
+            "text": text,
+            "private": private_mode
+        }
+
+        # 6) Append & save
+        df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+        df.to_csv(log_file, index=False)
+
+        st.success("✅ Journal entry saved successfully!")
+        st.balloons()
+
+    # --- Footer ---
     st.markdown("---")
     st.markdown("""
-    <div style='text-align: center; color: #666; font-size: 0.8em;'>
-    💙 Remember: This tool is for self-reflection and support. 
-    For professional mental health concerns, please consult a healthcare provider.
+    <div style='text-align:center;color:#666;font-size:.8em;'>
+      💙 Remember: This tool is for self-reflection. 
+      For professional concerns, consult a healthcare provider.
     </div>
     """, unsafe_allow_html=True)
 
