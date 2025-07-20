@@ -213,40 +213,25 @@ def analyzer_ui():
 
         if save_button:
             try:
-                if "user" in st.session_state and st.session_state["user"]:
-                    uid = st.session_state["user"].get("localId", "anonymous")
-                else:
-                    uid = "anonymous"
-
-                data_dir = os.path.join(os.getcwd(), "data")
-                if not os.path.exists(data_dir):
-                    os.makedirs(data_dir)
-
                 log_file = f"data/mood_{uid}.csv"
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                detected_emotion = detected_mood if 'detected_mood' in locals() else selected_mood
-                ai_confidence = confidence if 'confidence' in locals() else 0.0
-
-                new_entry = {
-                    "timestamp": timestamp,
-                    "selected_mood": selected_mood,
-                    "detected_emotion": detected_emotion,
-                    "confidence": ai_confidence,
-                    "text": entry if not private_mode else "[Private Entry]",
-                    "private": private_mode
-                }
-
+        
+        # **Insert this guard BEFORE you call pd.read_csv()**
+                os.makedirs("data", exist_ok=True)
                 try:
                     df = pd.read_csv(log_file)
                 except FileNotFoundError:
-                    df = pd.DataFrame()
-
+            # first time: start an empty DataFrame with your columns
+                    df = pd.DataFrame(columns=[
+                "timestamp", "selected_mood",
+                "detected_emotion", "confidence",
+                "text", "private"
+            ])
+                    df.to_csv(log_file, index=False)
                 df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
                 df.to_csv(log_file, index=False)
 
                 st.success("✅ Journal entry saved successfully!")
                 st.balloons()
-
             except Exception as e:
                 st.error(f"Error saving entry: {e}")
                 st.info("You can try copying your text and saving it manually.")
