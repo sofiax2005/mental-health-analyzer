@@ -38,7 +38,7 @@ def login_ui():
             else:
                 st.session_state["user"] = response
                 st.sidebar.success("Logged in!")
-                st.experimental_rerun()  # 🔁 Force app to reload with session state
+                st.rerun()  # 🔁 Force app to reload with session state
 
     st.warning("Please log in to use the app.")
     return False
