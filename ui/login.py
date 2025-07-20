@@ -14,6 +14,9 @@ def login_user(email, password):
     return requests.post(url, json=payload).json()
 
 def login_ui():
+    if "user" in st.session_state:
+        return True
+
     st.sidebar.title("🔐 Login")
     choice = st.sidebar.selectbox("Login or Signup", ["Login", "Signup"])
     email = st.sidebar.text_input("Email")
@@ -35,9 +38,7 @@ def login_ui():
             else:
                 st.session_state["user"] = response
                 st.sidebar.success("Logged in!")
+                st.experimental_rerun()  # 🔁 Force app to reload with session state
 
-    if "user" not in st.session_state:
-        st.warning("Please log in to use the app.")
-        return False
-
-    return True
+    st.warning("Please log in to use the app.")
+    return False
