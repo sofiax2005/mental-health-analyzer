@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-from firebase_admin import auth
 
 # --- Ensure "data" folder exists ---
 os.makedirs("data", exist_ok=True)
