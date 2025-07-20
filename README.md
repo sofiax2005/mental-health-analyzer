@@ -6,7 +6,7 @@ A mood-aware journaling web app that analyzes emotional tone using NLP, visualiz
 
 This app encourages mindful self-reflection through journaling, then uses NLP to analyze the emotional tone of each entry. Based on your mood, it recommends relevant music and quotes, and shows your emotional journey through graphs.
 
-Built with a clean, aesthetic UI using React and Firebase, it supports secure login, mood filtering, and editing/deleting past entries — all tailored to help users better understand and express their emotions.
+Built with a clean, aesthetic UI using React and Firebase, it supports secure login, mood filtering, and editing/deleting past entries all tailored to help users better understand and express their emotions.
 
 ---
 
