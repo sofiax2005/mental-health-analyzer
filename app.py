@@ -1,100 +1,62 @@
 import streamlit as st
-
-# After user logs in, get their UID like this
-user = st.session_state.get("user")  # Or however you're storing the user info
-if user:
-    uid = user['uid']
-else:
-    st.stop()  # Or handle not-logged-in case
 import pandas as pd
 import os
+from firebase_admin import auth
 
+# --- Ensure "data" folder exists ---
+os.makedirs("data", exist_ok=True)
+
+# --- Check if user is logged in ---
+if "user" not in st.session_state:
+    st.warning("You must be logged in to view this page.")
+    st.stop()
+
+# --- Get UID safely ---
+user = st.session_state["user"]
+uid = user.get("uid")
+
+if not uid:
+    st.error("User ID not found. Please log in again.")
+    st.stop()
+
+# --- File path for this user's mood data ---
 file_path = f"data/mood_{uid}.csv"
 
+# --- Initialize or read mood history ---
 if not os.path.exists(file_path):
-    # Create an empty DataFrame with expected columns
-    df = pd.DataFrame(columns=["timestamp", "mood", "emoji", "quote", "playlist_url", "journal"])
+    df = pd.DataFrame(columns=["timestamp", "mood", "entry"])
     df.to_csv(file_path, index=False)
 else:
     df = pd.read_csv(file_path)
 
-# Create data directory
-os.makedirs("data", exist_ok=True)
+# --- App title ---
+st.title("🌈 Mental Health Mood Tracker")
 
-# Import your custom modules
-from ui.styles import apply_gradient_background, initialize_theme
-from ui.login import login_ui
-from ui.analyzer import analyzer_ui
-from ui.history import history_ui
+# --- Mood input ---
+mood = st.selectbox("How are you feeling today?", ["Happy", "Sad", "Angry", "Stressed", "Calm"])
+entry = st.text_area("Write about your day or feelings:")
 
-# Configure Streamlit page (do this only once)
-st.set_page_config(
-    page_title="Mental Health Analyzer",
-    page_icon="🧠",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
+if st.button("Submit Entry"):
+    if entry.strip() == "":
+        st.warning("Entry cannot be empty.")
+    else:
+        new_data = pd.DataFrame([{
+            "timestamp": pd.Timestamp.now(),
+            "mood": mood,
+            "entry": entry
+        }])
+        df = pd.concat([df, new_data], ignore_index=True)
+        df.to_csv(file_path, index=False)
+        st.success("Entry submitted successfully!")
 
-def show_navigation():
-    """Show navigation sidebar"""
-    with st.sidebar:
-        st.title("🧠 Navigation")
+# --- Mood history display ---
+st.subheader("📅 Your Mood History")
+if df.empty:
+    st.info("No mood entries yet.")
+else:
+    st.dataframe(df[::-1])
 
-        nav_options = {
-            "🎭 Mood Analyzer": "analyzer",
-            "📊 History & Insights": "history", 
-            "⚙️ Settings": "settings",
-            "🚪 Logout": "logout"
-        }
-
-        selected = st.radio(
-            "Choose a section:",
-            list(nav_options.keys()),
-            index=0
-        )
-
-        return nav_options[selected]
-
-def main():
-    try:
-        # Handle login first (before theme stuff)
-        if not login_ui():
-            st.stop()
-
-        # Initialize theme
-        initialize_theme()
-
-        # Set default mood
-        if "current_mood" not in st.session_state:
-            st.session_state.current_mood = "neutral"
-
-        apply_gradient_background(st.session_state.current_mood)
-
-        # Show main UI
-        st.title("🧠 Mental Health Analyzer")
-
-        # Navigation
-        selected_section = show_navigation()
-        st.markdown("---")
-
-        # Routing
-        if selected_section == "analyzer":
-            analyzer_ui()
-        elif selected_section == "history":
-            try:
-                history_ui()
-            except Exception as e:
-                st.error(f"Error loading history: {e}")
-        elif selected_section == "settings":
-            st.info("Settings coming soon!")
-        elif selected_section == "logout":
-            st.session_state.clear()
-            st.success("You've been logged out. Refreshing...")
-            st.rerun()  # <-- This is the correct call now
-
-
-    except Exception as e:
-        st.error(f"Something broke in main(): {e}")
-
-if __name__ == "__main__":
-    main()
+# --- Logout button ---
+if st.button("Logout"):
+    st.session_state.clear()
+    st.rerun()
