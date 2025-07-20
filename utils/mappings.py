@@ -22,14 +22,18 @@ def get_emoji(mood):
 
 def get_spotify_embed(mood):
     playlists = {
-        "joy": "https://open.spotify.com/embed/playlist/5v7CLKGWzVbkWO8FyuG12C",
-        "sadness": "https://open.spotify.com/embed/playlist/37i9dQZF1DWVV27DiNWxkR",
-        "anger": "https://open.spotify.com/embed/playlist/37i9dQZF1DWX83CujKHHOn",
-        "fear": "https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd",
-        "love": "https://open.spotify.com/embed/playlist/37i9dQZF1DWXbttAJcbphz",
-        "surprise": "https://open.spotify.com/embed/playlist/37i9dQZF1DX7WJ4yDmRK8R",
+        "happy":   "https://open.spotify.com/embed/playlist/5v7CLKGWzVbkWO8FyuG12C",
+        "sad":     "https://open.spotify.com/embed/playlist/37i9dQZF1DWVV27DiNWxkR",
+        "angry":   "https://open.spotify.com/embed/playlist/37i9dQZF1DWX83CujKHHOn",
+        "calm":    "https://open.spotify.com/embed/playlist/37i9dQZF1DWUvHZA1zLcjW",      # ← new
+        "stressed":"https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUsuxWHRQd",      # ←stress‑busting
+        "anxious": "https://open.spotify.com/embed/playlist/37i9dQZF1DX7WJ4yDmRK8R",       # ←relax‑anxiety
+        "love":    "https://open.spotify.com/embed/playlist/37i9dQZF1DWXbttAJcbphz",
+        "surprise":"https://open.spotify.com/embed/playlist/37i9dQZF1DX7WJ4yDmRK8R",
+        "neutral": "https://open.spotify.com/embed/playlist/37i9dQZF1DXcZDD7cfEKhW"       # ←neutral vibes
     }
-    return playlists.get(mood.lower())
+    # fallback to neutral if mood not found
+    return playlists.get(mood.lower(), playlists["neutral"])
 
 def get_journaling_prompts(mood):
     prompts = {
