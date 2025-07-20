@@ -3,8 +3,11 @@ import os
 os.makedirs("data", exist_ok=True)
 from ui.styles import apply_gradient_background, initialize_theme
 from ui.login import login_ui
+if not login_ui():
+    st.stop()
 from ui.analyzer import analyzer_ui
 from ui.history import history_ui
+st.set_page_config(page_title="Mental Health Analyzer", layout="wide")
 
 # Configure Streamlit page
 st.set_page_config(
@@ -78,6 +81,4 @@ def main():
     except Exception as e:
         st.error(f"Something broke in main(): {e}")
 if __name__ == "__main__":
-    logged_in = login_ui()
-    if logged_in:
-        st.success("Welcome to the Mental Health Analyzer!")
+    main()
