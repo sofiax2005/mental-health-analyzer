@@ -1,4 +1,11 @@
 import streamlit as st
+
+# After user logs in, get their UID like this
+user = st.session_state.get("user")  # Or however you're storing the user info
+if user:
+    uid = user['uid']
+else:
+    st.stop()  # Or handle not-logged-in case
 import pandas as pd
 import os
 
