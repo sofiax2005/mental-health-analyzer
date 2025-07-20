@@ -213,10 +213,12 @@ def analyzer_ui():
 
         if save_button:
             try:
+                user = st.session_state.get("user", {})
+                uid = user.get("localId") or user.get("uid") or "anonymous"
+                os.makedirs("data", exist_ok=True)
                 log_file = f"data/mood_{uid}.csv"
         
         # **Insert this guard BEFORE you call pd.read_csv()**
-                os.makedirs("data", exist_ok=True)
                 try:
                     df = pd.read_csv(log_file)
                 except FileNotFoundError:
@@ -227,6 +229,21 @@ def analyzer_ui():
                 "text", "private"
             ])
                     df.to_csv(log_file, index=False)
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                detected_emotion = locals().get("detected_mood", selected_mood)
+                ai_confidence   = locals().get("confidence", 0.0)
+                text_to_save    = entry if not private_mode else "[Private Entry]"
+
+                new_entry = {
+                    "timestamp": timestamp,
+                    "mood": selected_mood,
+                    "detected_emotion": detected_emotion,
+                    "confidence": ai_confidence,
+                    "text": text_to_save,
+                    "private": private_mode
+                }
+
+                # 5) Append and save
                 df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
                 df.to_csv(log_file, index=False)
 
