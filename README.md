@@ -33,7 +33,7 @@ Built with a clean, aesthetic UI using React and Firebase, it supports secure lo
 
 ## 🚀 Live Demo
 
-👉 [**Try it live**]([https://your-deployed-app-link-here](https://mental-health-analyzer-fwqyjfudfwsmkv8otwr9ut.streamlit.app))  
+👉 [**Try it live**] [https://mental-health-analyzer-fwqyjfudfwsmkv8otwr9ut.streamlit.app]  
 
 
 ---
