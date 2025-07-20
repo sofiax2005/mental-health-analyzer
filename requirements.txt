@@ -5,3 +5,5 @@ transformers
 pandas
 matplotlib
 altair
+firebase-admin
+
