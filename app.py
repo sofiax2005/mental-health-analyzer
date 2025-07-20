@@ -1,61 +1,81 @@
 import streamlit as st
-import pandas as pd
 import os
-
-# --- Ensure "data" folder exists ---
 os.makedirs("data", exist_ok=True)
+from ui.styles import apply_gradient_background, initialize_theme
+from ui.login import login_ui
+from ui.analyzer import analyzer_ui
+from ui.history import history_ui
 
-# --- Check if user is logged in ---
-if "user" not in st.session_state:
-    st.warning("You must be logged in to view this page.")
-    st.stop()
+# Configure Streamlit page
+st.set_page_config(
+    page_title="Mental Health Analyzer",
+    page_icon=":brain:",  # Using shortcode instead of emoji
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
-# --- Get UID safely ---
-user = st.session_state["user"]
-uid = user.get("uid")
+def show_navigation():
+    """Show navigation sidebar"""
+    with st.sidebar:
+        st.title("🧠 Navigation")
 
-if not uid:
-    st.error("User ID not found. Please log in again.")
-    st.stop()
+        nav_options = {
+            "🎭 Mood Analyzer": "analyzer",
+            "📊 History & Insights": "history", 
+            "⚙️ Settings": "settings",
+            "🚪 Logout": "logout"
+        }
 
-# --- File path for this user's mood data ---
-file_path = f"data/mood_{uid}.csv"
+        selected = st.radio(
+            "Choose a section:",
+            list(nav_options.keys()),
+            key="navigation"
+        )
 
-# --- Initialize or read mood history ---
-if not os.path.exists(file_path):
-    df = pd.DataFrame(columns=["timestamp", "mood", "entry"])
-    df.to_csv(file_path, index=False)
-else:
-    df = pd.read_csv(file_path)
+        return nav_options[selected]
 
-# --- App title ---
-st.title("🌈 Mental Health Mood Tracker")
+def main():
+    """Main application function with proper error handling"""
+    try:
+        # Initialize theme
+        initialize_theme()
 
-# --- Mood input ---
-mood = st.selectbox("How are you feeling today?", ["Happy", "Sad", "Angry", "Stressed", "Calm"])
-entry = st.text_area("Write about your day or feelings:")
+        # Set default mood
+        if "current_mood" not in st.session_state:
+            st.session_state.current_mood = "neutral"
 
-if st.button("Submit Entry"):
-    if entry.strip() == "":
-        st.warning("Entry cannot be empty.")
-    else:
-        new_data = pd.DataFrame([{
-            "timestamp": pd.Timestamp.now(),
-            "mood": mood,
-            "entry": entry
-        }])
-        df = pd.concat([df, new_data], ignore_index=True)
-        df.to_csv(file_path, index=False)
-        st.success("Entry submitted successfully!")
+        apply_gradient_background(st.session_state.current_mood)
 
-# --- Mood history display ---
-st.subheader("📅 Your Mood History")
-if df.empty:
-    st.info("No mood entries yet.")
-else:
-    st.dataframe(df[::-1])
+        # Handle login
+        if not login_ui():
+            return  # Stop rendering if not logged in
 
-# --- Logout button ---
-if st.button("Logout"):
-    st.session_state.clear()
-    st.rerun()
+        # Logged-in main UI
+        st.title("🧠 Mental Health Analyzer")
+
+        # Navigation
+        selected_section = show_navigation()
+
+        st.markdown("---")
+
+        # Routing
+        if selected_section == "analyzer":
+            analyzer_ui()
+
+        elif selected_section == "history":
+            try:
+                history_ui()
+            except Exception as e:
+                st.error(f"Error loading history: {e}")
+
+        elif selected_section == "settings":
+            st.info("Settings coming soon!")
+
+        elif selected_section == "logout":
+            st.session_state.clear()
+            st.success("You've been logged out. Refresh to continue.")
+    
+    except Exception as e:
+        st.error(f"Something broke in main(): {e}")
+if __name__ == "__main__":
+    main()
