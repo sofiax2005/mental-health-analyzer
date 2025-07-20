@@ -1,5 +1,15 @@
 import streamlit as st
+import pandas as pd
 import os
+
+file_path = f"data/mood_{uid}.csv"
+
+if not os.path.exists(file_path):
+    # Create an empty DataFrame with expected columns
+    df = pd.DataFrame(columns=["timestamp", "mood", "emoji", "quote", "playlist_url", "journal"])
+    df.to_csv(file_path, index=False)
+else:
+    df = pd.read_csv(file_path)
 
 # Create data directory
 os.makedirs("data", exist_ok=True)
