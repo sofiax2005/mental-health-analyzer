@@ -245,4 +245,4 @@ def analyzer_ui():
     """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
-    analyzer_ui() fix this to fix ALL errors
+    analyzer_ui()
